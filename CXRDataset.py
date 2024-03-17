@@ -16,9 +16,8 @@ class CXRLabel(Enum):
     ABNORMAL = 1
 
 class CXRDataset(Dataset):
-  def __init__(self, archive_dir, transform=None, config=None):
+  def __init__(self, archive_dir, config=None):
     self.archive_dir = archive_dir
-    self.transform = transform
     self.image_to_label = {}
     self.inner_datasets = {}
     self.extract_data(config)
@@ -82,7 +81,7 @@ class COVID19_Radiography(CXRDataset):
     'Viral Pneumonia_https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia': COVID19_RadiographyDatasets.VP_1
   }
 
-  def __init__(self, archive_dir, transform=None, config:[COVID19_RadiographyDatasets]=None):
+  def __init__(self, archive_dir, config=None):
     super().__init__(archive_dir)
 
   def __getitem__(self, idx):
