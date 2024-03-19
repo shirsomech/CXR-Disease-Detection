@@ -1,6 +1,6 @@
 import torch
 from torchvision import models
-from CXRDataset import COVID19_Radiography, COVID19_RadiographyDatasets
+from CXRDataset import COVID19_Radiography, VinXRay
 from config import BASE_LR, NUM_EPOCHS
 from TrainAndTest import TrainAndTest
 
@@ -12,20 +12,21 @@ def create_alexnet(in_channels):
 def main():
 
     config = [
-        COVID19_RadiographyDatasets.NORMAL_1,
-        COVID19_RadiographyDatasets.NORMAL_2,
-        COVID19_RadiographyDatasets.COVID_1,
-        COVID19_RadiographyDatasets.COVID_2,
-        COVID19_RadiographyDatasets.COVID_3,
-        COVID19_RadiographyDatasets.COVID_4,
-        COVID19_RadiographyDatasets.COVID_5,
-        COVID19_RadiographyDatasets.COVID_6,
-        COVID19_RadiographyDatasets.LO_1,
-        COVID19_RadiographyDatasets.VP_1
+        COVID19_Radiography.Datasets.NORMAL_1,
+        COVID19_Radiography.Datasets.NORMAL_2,
+        COVID19_Radiography.Datasets.COVID_1,
+        COVID19_Radiography.Datasets.COVID_2,
+        COVID19_Radiography.Datasets.COVID_3,
+        COVID19_Radiography.Datasets.COVID_4,
+        COVID19_Radiography.Datasets.COVID_5,
+        COVID19_Radiography.Datasets.COVID_6,
+        COVID19_Radiography.Datasets.LO_1,
+        COVID19_Radiography.Datasets.VP_1
     ]
 
-    cxr_dataset = COVID19_Radiography("datasets/COVID-19_Radiography.zip", config)
-    
+    #cxr_dataset = COVID19_Radiography(config)
+    cxr_dataset = VinXRay()
+
     train_size = int(0.8 * len(cxr_dataset))
     test_size = len(cxr_dataset) - train_size
     train_dataset, test_dataset = torch.utils.data.random_split(cxr_dataset, [train_size, test_size])
