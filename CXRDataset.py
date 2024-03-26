@@ -22,6 +22,7 @@ class CXRDataset(Dataset):
     self.inner_datasets = {}
     self.extract_data(config)
     self.items = list(self.image_to_label.items())
+    print(self.items)
 
   @abstractmethod
   def extract_data(self, **kwargs):
@@ -53,7 +54,6 @@ class VinXRay(CXRDataset):
         
         transform = transforms.Compose([
           transforms.RandomResizedCrop(224),
-          #transforms.RandomHorizontalFlip(),
           transforms.ToTensor(),
           transforms.Grayscale()
         ])
@@ -113,32 +113,32 @@ class COVID19_Radiography(CXRDataset):
     """
 
   class Datasets(Enum):
-    NORMAL_1 = 1
-    NORMAL_2 = 2
-    COVID_1 = 3
-    COVID_2 = 4
-    COVID_3 = 5
-    COVID_4 = 6
-    COVID_5 = 7
-    COVID_6 = 8
-    LO_1 = 9
-    VP_1 = 10
+    NORMAL_DS1 = 1
+    NORMAL_DS2 = 2
+    COVID_DS3 = 3
+    COVID_DS4 = 4
+    COVID_DS5 = 5
+    COVID_DS6 = 6
+    COVID_DS7 = 7
+    COVID_DS8 = 8
+    LO_DS1 = 9
+    VP_DS2 = 10
 
   DATASET_TO_INDEX = {
-    'Normal_https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data': Datasets.NORMAL_1,
-    'Normal_https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia': Datasets.NORMAL_2,
-    'COVID_https://sirm.org/category/senza-categoria/covid-19/': Datasets.COVID_1,
-    'COVID_https://github.com/ml-workgroup/covid-19-image-repository/tree/master/png': Datasets.COVID_2,
-    'COVID_https://eurorad.org': Datasets.COVID_3,
-    'COVID_https://github.com/armiro/COVID-CXNet' : Datasets.COVID_4,
-    'COVID_https://github.com/ieee8023/covid-chestxray-dataset': Datasets.COVID_5,
-    'COVID_https://bimcv.cipf.es/bimcv-projects/bimcv-covid19/#1590858128006-9e640421-6711': Datasets.COVID_6,
-    'Lung_Opacity_https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data': Datasets.LO_1,
-    'Viral Pneumonia_https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia': Datasets.VP_1
+    'Normal_https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data': Datasets.NORMAL_DS1,
+    'Normal_https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia': Datasets.NORMAL_DS2,
+    'COVID_https://sirm.org/category/senza-categoria/covid-19/': Datasets.COVID_DS3,
+    'COVID_https://github.com/ml-workgroup/covid-19-image-repository/tree/master/png': Datasets.COVID_DS4,
+    'COVID_https://eurorad.org': Datasets.COVID_DS5,
+    'COVID_https://github.com/armiro/COVID-CXNet' : Datasets.COVID_DS6,
+    'COVID_https://github.com/ieee8023/covid-chestxray-dataset': Datasets.COVID_DS7,
+    'COVID_https://bimcv.cipf.es/bimcv-projects/bimcv-covid19/#1590858128006-9e640421-6711': Datasets.COVID_DS8,
+    'Lung_Opacity_https://www.kaggle.com/c/rsna-pneumonia-detection-challenge/data': Datasets.LO_DS1,
+    'Viral Pneumonia_https://www.kaggle.com/paultimothymooney/chest-xray-pneumonia': Datasets.VP_DS2
   }
 
   def __init__(self, config=None):
-    super().__init__("datasets/COVID-19_Radiography.zip")
+    super().__init__("datasets/COVID-19_Radiography.zip", config)
 
   def __getitem__(self, idx):
       img_path, label = self.items[idx]
