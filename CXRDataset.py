@@ -22,15 +22,24 @@ class CXRDataset(Dataset):
     self.inner_datasets = {}
     self.extract_data(config)
     self.items = list(self.image_to_label.items())
-    print(self.items)
 
   @abstractmethod
   def extract_data(self, **kwargs):
     raise NotImplementedError
 
-  @abstractmethod
   def __getitem__(self, idx):
-    raise NotImplementedError
+    img_path, label = self.items[idx]
+    with open(img_path, "rb") as file:
+      img = Image.open(io.BytesIO(file.read()))
+      
+      transform = transforms.Compose([
+        transforms.RandomResizedCrop(224),
+        transforms.ToTensor(),
+        transforms.Grayscale()
+      ])
+      
+      img = transform(img)
+      return img, label.value
     
   def __len__(self):
     return len(self.items)
@@ -46,21 +55,6 @@ class VinXRay(CXRDataset):
   
   def __init__(self, config=None):
     super().__init__("datasets/VinXRay.zip")
-
-  def __getitem__(self, idx):
-      img_path, label = self.items[idx]
-      with open(img_path, "rb") as file:
-        img = Image.open(io.BytesIO(file.read()))
-        
-        transform = transforms.Compose([
-          transforms.RandomResizedCrop(224),
-          transforms.ToTensor(),
-          transforms.Grayscale()
-        ])
-
-        img = transform(img)
-
-        return img, label.value
 
   def extract_data(self, config):
     with zipfile.ZipFile(self.archive_file, "r") as zip_ref:
@@ -139,22 +133,6 @@ class COVID19_Radiography(CXRDataset):
 
   def __init__(self, config=None):
     super().__init__("datasets/COVID-19_Radiography.zip", config)
-
-  def __getitem__(self, idx):
-      img_path, label = self.items[idx]
-      with open(img_path, "rb") as file:
-        img = Image.open(io.BytesIO(file.read()))
-        
-        transform = transforms.Compose([
-          transforms.RandomResizedCrop(224),
-          #transforms.RandomHorizontalFlip(),
-          transforms.ToTensor(),
-          transforms.Grayscale()
-        ])
-
-        img = transform(img)
-
-        return img, label.value
 
   def extract_data(self, config):
     self.normal = ["Normal"]

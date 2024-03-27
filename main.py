@@ -69,19 +69,18 @@ def main():
         for j, percentage in enumerate(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET):
             original_training_dataset = COVID19_Radiography(training_config)
 
-            cxr_size = (1 - percentage) * len(original_training_dataset)
+            cxr_size = int((1 - percentage) * len(original_training_dataset))
             resized_original_training_dataset = data_utils.Subset(original_training_dataset, torch.arange(cxr_size))
             
-            vietnam_size = percentage * len(original_training_dataset)
+            vietnam_size = int(percentage * len(original_training_dataset))
             resized_vietnam_training_dataset = data_utils.Subset(vietnam_training_dataset, torch.arange(vietnam_size))
-            
-            # Save the reconstructed dataset 
+
             training_config_matrix[i][j] = torch.utils.data.ConcatDataset(
                 [resized_original_training_dataset, resized_vietnam_training_dataset]
             )
 
             print(f"Training on %{(1-percentage)*100} of {str(training_config)} and %{percentage*100} of target dataset")
-
+            
             datasets = DatasetManager(training_config_matrix[i][j], vietnam_testing_dataset)
             t = TrainAndTest(alexnet, datasets, lr=BASE_LR)
             accuracies, losses = t.train(NUM_EPOCHS)
