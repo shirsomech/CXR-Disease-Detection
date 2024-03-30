@@ -35,7 +35,7 @@ class CXRDataset(Dataset):
       transform = transforms.Compose([
         transforms.RandomResizedCrop(224),
         transforms.ToTensor(),
-        transforms.Grayscale()
+        #transforms.Grayscale()
       ])
       
       img = transform(img)
@@ -82,7 +82,6 @@ class VinXRay(CXRDataset):
             except (IOError, SyntaxError) as e:
               logging.info(f"Invalid image file {filename}: {e}, skipping..")
               continue
-
 
 class COVID19_Radiography(CXRDataset):
   """
