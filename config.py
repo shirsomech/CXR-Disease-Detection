@@ -2,6 +2,7 @@ DATASET_PATHS = [
     "datasets/COVID-19_Radiography.zip",
     "datasets/VinXRay.zip"
 ]
+MODELS_DIR_NAME = "models"
 
 # TRAINING SETTINGS
 NUM_EPOCHS = 1
