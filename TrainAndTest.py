@@ -8,20 +8,14 @@ import torch.optim as optim
 from torchvision import datasets, models, transforms
 from torch.autograd import Variable
 from sklearn.metrics import confusion_matrix
-
-def create_resnet(in_channels):
-    model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2)
-    model.conv1 = nn.Conv2d(in_channels, 64, kernel_size=7, stride=2, padding=3, bias=False) 
-    return model 
+import time
 
 class TrainAndTest(object):
     def __init__(self, model, datasets, config=None, lr=BASE_LR):
         self.model_ft = model
         self.dataset_manager = datasets
-        self.accuracies = []
-        self.losses = []
+        self.accuracies = {}
+        self.losses = {}
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.RMSprop(self.model_ft.parameters(), lr=BASE_LR)
         self.phases = ['Train', 'Val']
@@ -30,12 +24,13 @@ class TrainAndTest(object):
     def train(self, num_epochs):
         true_labels = []
         predicted_labels = []
-
+        best_acc = None
+        
         for epoch in range(1, num_epochs + 1):
             print('-' * 10)
             print('Epoch {}/{}'.format(epoch, num_epochs))
             print('-' * 10)
-
+           
             for phase in self.phases:
                 if phase == 'Train':
                     self.optimizer = self.__lr_scheduler(epoch)
@@ -65,7 +60,6 @@ class TrainAndTest(object):
 
                     counter += 1
 
-
                     if phase == 'Train':
                         loss.backward()
                         self.optimizer.step()
@@ -79,18 +73,26 @@ class TrainAndTest(object):
                 epoch_acc = running_corrects.item() / float(self.dataset_manager.dataset_sizes[phase])
                 print('{} Loss: {:.4f} Acc: {:.4f}'.format(phase, epoch_loss, epoch_acc))
 
-                self.accuracies[phase].append(epoch_acc)
-                self.losses[phase].append(epoch_loss)
+                if phase not in self.accuracies:
+                    self.accuracies[phase] = [epoch_acc]
+                else:
+                    self.accuracies[phase].append(epoch_acc)
 
+                if phase not in self.losses:
+                    self.losses[phase] = [epoch_loss]
+                else:
+                    self.losses[phase].append(epoch_loss)  
+
+            
                 # deep copy the model
-                if phase == 'val':
+                if phase == 'Val':
                     if epoch_acc > best_acc:
                         best_acc = epoch_acc
                         best_model = copy.deepcopy(model)
                         print('new best accuracy =', best_acc)
         
         time_elapsed = time.time() - since
-        import pdb; pdb.set_trace()
+
         conf_matrix = confusion_matrix(true_labels, predicted_labels)
 
         # Print confusion matrix
