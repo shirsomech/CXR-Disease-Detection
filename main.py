@@ -38,12 +38,12 @@ def main():
     test_size = len(vietnam_dataset) - train_size
     vietnam_training_dataset, vietnam_testing_dataset = torch.utils.data.random_split(vietnam_dataset, [train_size, test_size])
     
-    #datasets = DatasetManager(vietnam_training_dataset, vietnam_testing_dataset)
-    #t = TrainAndTest(model, datasets, lr=BASE_LR)
+    datasets = DatasetManager(vietnam_training_dataset, vietnam_testing_dataset)
+    t = TrainAndTest(model, datasets, lr=BASE_LR)
 
     # Baseline model 
-    #confusion_matrix, accuracies, losses = t.train(NUM_EPOCHS)
-    #torch.save(model.state_dict(), os.path.join(MODELS_DIR_NAME, "baseline.pt"))
+    confusion_matrix, accuracies, losses = t.train(NUM_EPOCHS)
+    torch.save(model.state_dict(), os.path.join(MODELS_DIR_NAME, "baseline.pt"))
 
     
     # Building the testing configuration matrix
@@ -105,17 +105,19 @@ def main():
                 [resized_original_training_dataset, resized_vietnam_training_dataset]
             )
             
+            model_config = get_configuration_str(percentage, training_config, vietnam_dataset)
+            model_path = os.path.join(MODELS_DIR_NAME, f"{model_config}.pt")
+
             # Resize the mixed training set to be equal to the size of the vietnam training set for consistency 
             training_config_matrix[i][j] = data_utils.Subset(mixed_training_dataset, torch.arange(train_size))
 
             datasets = DatasetManager(training_config_matrix[i][j], vietnam_dataset)
             t = TrainAndTest(model, datasets, lr=BASE_LR)
-            confusion_matrix, accuracies, losses = t.train(NUM_EPOCHS)
-
-            # Save model
-            model_config = get_configuration_str(percentage, training_config, vietnam_dataset)
-            model_path = os.path.join(MODELS_DIR_NAME, f"{model_config}.pt")
-            torch.save(model.state_dict(), model_path)
+            t.train(NUM_EPOCHS)
+           
+            # Save model and results
+            t.save(model_config, model_path)
+            
                
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ class DatasetManager(object):
             "Train": torch.utils.data.DataLoader(training_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS),
             "Val": torch.utils.data.DataLoader(testing_dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=NUM_WORKERS)
         }
-        self._dataset_sizes = {key: len(value) for key, value in self.datasets.items()}
+        self._dataset_sizes = {key: len(value) for key, value in self._datasets.items()}
 
     @property
     def datasets(self):

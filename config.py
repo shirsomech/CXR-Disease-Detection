@@ -1,5 +1,6 @@
 
 MODELS_DIR_NAME = "models"
+RESULTS_PATH = "models/results.txt"
 
 # TRAINING SETTINGS
 NUM_EPOCHS = 5
