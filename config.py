@@ -1,14 +1,11 @@
-DATASET_PATHS = [
-    "datasets/COVID-19_Radiography.zip",
-    "datasets/VinXRay.zip"
-]
+
 MODELS_DIR_NAME = "models"
 
 # TRAINING SETTINGS
-NUM_EPOCHS = 1
+NUM_EPOCHS = 5
 
 # LEARNING RATE SETTINGS
-BASE_LR = 0.0001
+BASE_LR = 0.00001
 DECAY_WEIGHT = 0.1 
 EPOCH_DECAY = 30 
 

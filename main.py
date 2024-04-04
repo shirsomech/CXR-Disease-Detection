@@ -3,10 +3,11 @@ import torch.utils.data as data_utils
 import torch.nn as nn
 from torchvision import models
 from CXRDataset import COVID19_Radiography, VinXRay
-from config import BASE_LR, NUM_EPOCHS, TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET, NUM_CLASSES, MODELS_DIR_NAME
+from config import *
 from TrainAndTest import TrainAndTest
 from DatasetManager import DatasetManager
 import numpy as np
+import os
 
 def get_configuration_str(percentage, training_config, target_dataset):
     og_training_datasets = "-".join([str(int((1-percentage)*100)), "_".join([ds.name for ds in training_config])])
@@ -33,17 +34,18 @@ def main():
     # Baseline
     vietnam_dataset = VinXRay()
     
-    train_size = int(0.8 * len(vietnam_dataset))
+    train_size = int(0.9 * len(vietnam_dataset))
     test_size = len(vietnam_dataset) - train_size
     vietnam_training_dataset, vietnam_testing_dataset = torch.utils.data.random_split(vietnam_dataset, [train_size, test_size])
-
-    datasets = DatasetManager(vietnam_training_dataset, vietnam_testing_dataset)
-    t = TrainAndTest(model, datasets, lr=BASE_LR)
+    
+    #datasets = DatasetManager(vietnam_training_dataset, vietnam_testing_dataset)
+    #t = TrainAndTest(model, datasets, lr=BASE_LR)
 
     # Baseline model 
-    confusion_matrix = t.train(NUM_EPOCHS)
-    torch.save(model.state_dict(), os.path.join(MODELS_DIR_NAME, "baseline.pt"))
+    #confusion_matrix, accuracies, losses = t.train(NUM_EPOCHS)
+    #torch.save(model.state_dict(), os.path.join(MODELS_DIR_NAME, "baseline.pt"))
 
+    
     # Building the testing configuration matrix
     cxr_datasets_config = [
         COVID19_Radiography.Datasets.NORMAL_DS1,
@@ -80,10 +82,17 @@ def main():
     ]
     training_dataset_configs = [one_dataset, two_datasets, four_datasets, six_datasets, eight_datasets]
 
-    training_config_matrix = np.empty((len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)), dtype=data_utils.ConcatDataset)
+    training_config_matrix = np.empty(
+        (len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)),
+        dtype=data_utils.ConcatDataset)
 
     for i, training_config in enumerate(training_dataset_configs):
         for j, percentage in enumerate(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET):
+
+            print(f"Training on %{(1-percentage)*100} of {str(training_config)} and %{percentage*100} of target dataset")
+            
+            model = create_alexnet(num_classes=NUM_CLASSES)
+
             original_training_dataset = COVID19_Radiography(training_config)
 
             cxr_size = int((1 - percentage) * len(original_training_dataset))
@@ -92,26 +101,21 @@ def main():
             vietnam_size = int(percentage * len(original_training_dataset))
             resized_vietnam_training_dataset = data_utils.Subset(vietnam_training_dataset, torch.arange(vietnam_size))
 
-            training_config_matrix[i][j] = torch.utils.data.ConcatDataset(
+            mixed_training_dataset = torch.utils.data.ConcatDataset(
                 [resized_original_training_dataset, resized_vietnam_training_dataset]
             )
             
-            #TODO: Resize original training set to a set number 
-            print(f"Training on %{(1-percentage)*100} of {str(training_config)} and %{percentage*100} of target dataset")
-            
-            datasets = DatasetManager(training_config_matrix[i][j], vietnam_dataset)
-            model = create_alexnet(num_classes=NUM_CLASSES)
-            t = TrainAndTest(model, datasets, lr=BASE_LR)
-            accuracies, losses = t.train(NUM_EPOCHS)
+            # Resize the mixed training set to be equal to the size of the vietnam training set for consistency 
+            training_config_matrix[i][j] = data_utils.Subset(mixed_training_dataset, torch.arange(train_size))
 
-            for split in ['train', 'val']:
-                print(split, "accuracies by epoch:", accuracies[split])
-                print(split, "losses by epoch:", losses[split])
+            datasets = DatasetManager(training_config_matrix[i][j], vietnam_dataset)
+            t = TrainAndTest(model, datasets, lr=BASE_LR)
+            confusion_matrix, accuracies, losses = t.train(NUM_EPOCHS)
 
             # Save model
             model_config = get_configuration_str(percentage, training_config, vietnam_dataset)
-            model_path = os.path.join(MODELS_DIR_NAME, "{model_config}.pt")
-            torch.save(model_ft.state_dict(), model_path)
+            model_path = os.path.join(MODELS_DIR_NAME, f"{model_config}.pt")
+            torch.save(model.state_dict(), model_path)
                
 
 if __name__ == "__main__":

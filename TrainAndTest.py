@@ -24,7 +24,7 @@ class TrainAndTest(object):
     def train(self, num_epochs):
         true_labels = []
         predicted_labels = []
-        best_acc = None
+        best_acc = 0
         
         for epoch in range(1, num_epochs + 1):
             print('-' * 10)
@@ -55,10 +55,10 @@ class TrainAndTest(object):
                     loss = self.criterion(outputs, labels)
 
                     # Print a line every 10 batches so you have something to watch and don't feel like the program isn't running.
-                    if counter % 10 == 0:
-                        print("Reached batch iteration", counter)
+                    #if counter % 10 == 0:
+                        #print("Reached batch iteration", counter)
 
-                    counter += 1
+                    #counter += 1
 
                     if phase == 'Train':
                         loss.backward()
@@ -88,20 +88,20 @@ class TrainAndTest(object):
                 if phase == 'Val':
                     if epoch_acc > best_acc:
                         best_acc = epoch_acc
-                        best_model = copy.deepcopy(model)
+                        #best_model = copy.deepcopy(model)
                         print('new best accuracy =', best_acc)
         
-        time_elapsed = time.time() - since
+        #time_elapsed = time.time() - since
 
         conf_matrix = confusion_matrix(true_labels, predicted_labels)
 
         # Print confusion matrix
         print("Confusion Matrix:", conf_matrix)
 
-        print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
+        #print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
         print('Best val Acc: {:4f}'.format(best_acc))
 
-        return self.accuracies, self.losses
+        return conf_matrix, self.accuracies, self.losses
 
 
     def __lr_scheduler(self, epoch, init_lr=BASE_LR, lr_decay_epoch=EPOCH_DECAY):

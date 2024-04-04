@@ -30,15 +30,15 @@ class CXRDataset(Dataset):
   def __getitem__(self, idx):
     img_path, label = self.items[idx]
     with open(img_path, "rb") as file:
-      img = Image.open(io.BytesIO(file.read()))
-      
+      img = Image.open(io.BytesIO(file.read())).convert('RGB')
+
       transform = transforms.Compose([
         transforms.RandomResizedCrop(224),
-        transforms.ToTensor(),
-        #transforms.Grayscale()
+        transforms.ToTensor()
       ])
       
       img = transform(img)
+
       return img, label.value
     
   def __len__(self):
@@ -150,17 +150,21 @@ class COVID19_Radiography(CXRDataset):
         if dataset_id not in self.inner_datasets:
           # Encountered new dataset
           self.inner_datasets[dataset_id] = []
+
         file_path = os.path.join(image_dir, f"{row['FILE NAME']}.png")
         if file_operations.is_valid_image_file(file_path):
+
           # Read the image file from the zip
           with open(file_path, "rb") as file:
             try:
               img_data = file.read()
               img = Image.open(io.BytesIO(img_data))
               img.verify()
+
               self.inner_datasets[dataset_id].append(file_path)
               if not config or self.DATASET_TO_INDEX[dataset_id] in config:
                 self.image_to_label[file_path] = CXRLabel.NORMAL if category in self.normal else CXRLabel.ABNORMAL
+
             except (IOError, SyntaxError) as e:
               logging.info(f"Invalid image file {filename}: {e}, skipping..")
               continue
