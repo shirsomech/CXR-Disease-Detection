@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, models, transforms
 from torch.autograd import Variable
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, classification_report
 import time
 
 class TrainAndTest(object):
@@ -23,14 +23,17 @@ class TrainAndTest(object):
         self.output_path = output_path
 
     def train(self, num_epochs):
-        true_labels = []
-        predicted_labels = []
         best_acc = 0
-        
+        best_predicted_labels = None
+        best_true_labels = None
+
         for epoch in range(1, num_epochs + 1):
             print('-' * 10)
             print('Epoch {}/{}'.format(epoch, num_epochs))
             print('-' * 10)
+
+            true_labels = []
+            predicted_labels = []
            
             for phase in self.phases:
                 if phase == 'Train':
@@ -42,6 +45,7 @@ class TrainAndTest(object):
                 running_loss = 0.0
                 running_corrects = 0
                 counter = 0
+
                 for data in self.dataset_manager.dataloaders[phase]:
                     inputs, labels = data
                     inputs, labels = Variable(inputs), Variable(labels)
@@ -50,14 +54,15 @@ class TrainAndTest(object):
                     outputs = self.model_ft(inputs)
                     _, preds = torch.max(outputs.data, 1)
 
-                    true_labels.extend(labels.cpu().numpy())
-                    predicted_labels.extend(preds.cpu().numpy())
-
                     loss = self.criterion(outputs, labels)
 
                     if phase == 'Train':
                         loss.backward()
                         self.optimizer.step()
+                    else:
+                        true_labels.extend(labels.numpy())
+                        predicted_labels.extend(preds.numpy())
+                    
                     try:
                         running_loss += loss.item()
                         running_corrects += torch.sum(preds == labels.data)
@@ -78,30 +83,31 @@ class TrainAndTest(object):
                 else:
                     self.losses[phase].append(epoch_loss)  
 
-        
                 if phase == 'Val':
                     if epoch_acc > best_acc:
                         best_acc = epoch_acc
                         print('new best accuracy =', best_acc)
+                        best_predicted_labels = predicted_labels
+                        best_true_labels = true_labels
+
         
-        self.confusion_matrix = confusion_matrix(true_labels, predicted_labels)
+        self.confusion_matrix = confusion_matrix(best_true_labels, best_predicted_labels)
+        report = classification_report(best_true_labels, best_predicted_labels, output_dict=True)
 
         # Print confusion matrix
-        print("Confusion Matrix:", conf_matrix)
-
-        #print('Training complete in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
+        print("Confusion Matrix:", self.confusion_matrix)
         print('Best val Acc: {:4f}'.format(best_acc))
 
-        return self.confusion_matrix, self.accuracies, self.losses
+        return report
 
     def save(self, model_name, model_path):
-        torch.save(self.model.state_dict(), model_path)
-        with open(output_path, 'w') as f:
+        with open(self.output_path, 'a') as f:
             f.write(f"{model_name}\n")
             f.write(f"Confusion Matrix: {self.confusion_matrix}\n")
             f.write(f"Accuracies: {self.accuracies}\n")
             f.write(f"Losses: {self.losses}\n")
 
+        torch.save(self.model_ft.state_dict(), model_path)
 
     def __lr_scheduler(self, epoch, init_lr=BASE_LR, lr_decay_epoch=EPOCH_DECAY):
         lr = init_lr * (DECAY_WEIGHT**(epoch // lr_decay_epoch))
@@ -119,5 +125,5 @@ class TrainAndTest(object):
     
     @property
     def model():
-        return self.model
+        return self.model_ft
 
