@@ -1,6 +1,6 @@
 
-MODELS_DIR_NAME = "models"
-RESULTS_PATH = "models/results.txt"
+MODELS_DIR_NAME = "fine_tuning"
+RESULTS_PATH = f"{MODELS_DIR_NAME}/results.txt"
 
 # TRAINING SETTINGS
 NUM_EPOCHS = 5

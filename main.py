@@ -14,11 +14,7 @@ def get_configuration_str(percentage, training_config, target_dataset):
     target_db = "-".join([str(int(percentage*100)), target_dataset.__class__.__name__])
     return " ".join([og_training_datasets, target_db])
 
-def create_resnet(in_channels, num_classes):
-    model = models.resnet18(pretrained=True)
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, NUM_CLASSES)
-    return model
+
 
 def create_alexnet(num_classes):
     model = models.alexnet(weights=models.AlexNet_Weights.DEFAULT)
@@ -37,6 +33,7 @@ def main():
     
     train_size = int(0.8 * len(vietnam_dataset))
     test_size = len(vietnam_dataset) - train_size
+    # Training 12,000 Testing 3,000
     vietnam_training_dataset, vietnam_testing_dataset = torch.utils.data.random_split(vietnam_dataset, [train_size, test_size])
     
     datasets = DatasetManager(vietnam_training_dataset, vietnam_testing_dataset)
@@ -45,7 +42,7 @@ def main():
     # Baseline model 
     report = t.train(NUM_EPOCHS)
 
-    with open("models/matrices.txt", "a") as f:
+    with open(f"{MODELS_DIR_NAME}/matrices.txt", "a") as f:
         f.write(str(report))
     
     t.save("Baseline", os.path.join(MODELS_DIR_NAME, "baseline.pt"))
@@ -84,15 +81,10 @@ def main():
     precision_matrix = np.empty((len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)))
     f1_score_matrix = np.empty((len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)))
 
-    accuracy_matrix1 = np.empty((len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)))
-    recall_matrix1 = np.empty((len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)))
-    precision_matrix1 = np.empty((len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)))
-    f1_score_matrix1 = np.empty((len(training_dataset_configs), len(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET)))
-
 
     for i, training_config in enumerate(training_dataset_configs):
         for j, percentage in enumerate(TARGET_SITE_PERCENTAGE_IN_TESTING_DATASET):
-
+            
             print(f"Training on %{(1-percentage)*100} of {str(training_config)} and %{percentage*100} of target dataset")
             model = create_alexnet(num_classes=NUM_CLASSES)
             
@@ -102,10 +94,9 @@ def main():
 
             # Resize to the training dataset to the necessary portion for the test
             fractioned_training_dataset = data_utils.Subset(resized_training_dataset, torch.arange(int(train_size * (1-percentage))))
-            
+
             # Resize the target testing dataset to the necessary portion for the test
             fractioned_vietnam_training_dataset = data_utils.Subset(vietnam_training_dataset, torch.arange(int(train_size * percentage)))
-
             # Concatenate the two datasets so that they are equal to the original target training dataset size
             mixed_training_dataset = torch.utils.data.ConcatDataset(
                 [fractioned_training_dataset, fractioned_vietnam_training_dataset]
@@ -116,8 +107,8 @@ def main():
             model_config = get_configuration_str(percentage, training_config, vietnam_dataset)
             model_path = os.path.join(MODELS_DIR_NAME, f"{model_config}.pt") 
 
-            datasets = DatasetManager(mixed_training_dataset, vietnam_dataset)
-            t = TrainAndTest(model, datasets, lr=BASE_LR, output_path="models/results.txt")
+            datasets = DatasetManager(training_dataset, vietnam_dataset)
+            t = TrainAndTest(model, datasets, lr=BASE_LR, output_path=f"{MODELS_DIR_NAME}/results.txt")
             report = t.train(NUM_EPOCHS)
 
             accuracy_matrix[i][j] = report['accuracy']
@@ -125,7 +116,7 @@ def main():
             recall_matrix[i][j] = report['weighted avg']['recall']
             f1_score_matrix[i][j] = report['weighted avg']['f1-score']
 
-            with open("models/matrices.txt", "a") as f:
+            with open(f"{MODELS_DIR_NAME}/matrices.txt", "a") as f:
                 f.write(f"Accuracy: {accuracy_matrix}\n")
                 f.write(f"Precision: {precision_matrix}\n")
                 f.write(f"Recall: {recall_matrix}\n")

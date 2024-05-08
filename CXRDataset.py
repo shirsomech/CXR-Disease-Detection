@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import torchvision
+import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 import pandas as pd
@@ -10,6 +11,7 @@ from utils import file_operations
 import zipfile
 from PIL import Image 
 import io
+
 
 class CXRLabel(Enum):
     NORMAL = 0
@@ -32,13 +34,16 @@ class CXRDataset(Dataset):
     with open(img_path, "rb") as file:
       img = Image.open(io.BytesIO(file.read())).convert('RGB')
 
+      noise_level = 25
+
       transform = transforms.Compose([
         transforms.RandomResizedCrop(224),
-        transforms.ToTensor()
+        #transforms.ColorJitter(brightness=0.5),
+        transforms.ToTensor(),
+        #transforms.Lambda(lambda x: x + torch.randn_like(x) * noise_level / 255)
       ])
       
       img = transform(img)
-
       return img, label.value
     
   def __len__(self):
@@ -62,9 +67,11 @@ class VinXRay(CXRDataset):
 
     self.inner_datasets = {'test':[], 'train':[], 'val':[]}
     image_dir = os.path.join(os.getcwd(), 'vinxray', "train")
+    
     for category in self.inner_datasets.keys():
       metadata_file = os.path.join(os.getcwd(), 'vinxray', f'vietnam_{category}.csv')
       metadata = pd.read_csv(metadata_file)
+      
       for index, row in metadata.iterrows():
         image_path = row['full_path'][1:]
         file_path = os.getcwd() + image_path
@@ -112,7 +119,7 @@ class COVID19_Radiography(CXRDataset):
     COVID_DS4 = 4
     COVID_DS5 = 5
     COVID_DS6 = 6
-    COVID_DS7 = 7
+    COVID_DS7 = 7            
     COVID_DS8 = 8
     LO_DS1 = 9
     VP_DS2 = 10
@@ -145,6 +152,7 @@ class COVID19_Radiography(CXRDataset):
       metadata_file = os.path.join(os.getcwd(), 'COVID-19_Radiography_Dataset', f'{category}.metadata.xlsx')
       image_dir = os.path.join(os.getcwd(), 'COVID-19_Radiography_Dataset', category, 'images')
       metadata = pd.read_excel(metadata_file)
+      
       for index, row in metadata.iterrows():
         dataset_id = f"{category}_{row['URL']}"
         if dataset_id not in self.inner_datasets:

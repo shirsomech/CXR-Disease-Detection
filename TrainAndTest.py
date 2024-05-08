@@ -102,10 +102,8 @@ class TrainAndTest(object):
 
     def save(self, model_name, model_path):
         with open(self.output_path, 'a') as f:
-            f.write(f"{model_name}\n")
+            f.write(f"{model_name}")
             f.write(f"Confusion Matrix: {self.confusion_matrix}\n")
-            f.write(f"Accuracies: {self.accuracies}\n")
-            f.write(f"Losses: {self.losses}\n")
 
         torch.save(self.model_ft.state_dict(), model_path)
 
